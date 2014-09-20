@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:View xmlns:fx="http://ns.adobe.com/mxml/2009"
+        xmlns:s="library://ns.adobe.com/flex/spark"
+        viewActivate="onViewActivate(event)"
+        actionBarVisible="false"
+        resize="onResize(event)">
+  
+  <fx:Script>
+    <![CDATA[
+      import mx.events.ResizeEvent;
+      
+      import manager.ApplicationManager;
+      
+      private var swv : StageWebView;
+      private var open : Boolean = false;
+      
+      [Bindable]
+      private var delta : Number = 0;
+      
+      private function onViewActivate(e : Event) : void
+      {
+        NativeApplication.nativeApplication.addEventListener(KeyboardEvent.KEY_DOWN,onKeyDown);
+        if(!ApplicationManager.isAndroid())
+          delta = 50;
+        swv = new StageWebView;
+        swv.addEventListener(Event.COMPLETE,onComplete);
+        swv.addEventListener(ErrorEvent.ERROR,onError);
+        swv.loadURL("http://www.youtube.com/embed/" + data.video_id);
+      }
+      
+      private function onComplete(e : Event) : void
+      {
+        swv.removeEventListener(Event.COMPLETE,onComplete);
+        swv.removeEventListener(ErrorEvent.ERROR,onError);
+        swv.stage = this.stage;
+        resizeSWV()
+      }
+      
+      private function onError(e : Event) : void
+      {
+        swv.removeEventListener(Event.COMPLETE,onComplete);
+        swv.removeEventListener(ErrorEvent.ERROR,onError);
+      }
+      
+      protected function onKeyDown(event:KeyboardEvent):void
+      {
+        if( event.keyCode == Keyboard.BACK && isActive)
+        {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          menuHandler(null);
+        }
+      }
+      
+      protected function menuHandler(event:Event):void
+      {
+        NativeApplication.nativeApplication.removeEventListener(KeyboardEvent.KEY_DOWN,onKeyDown);
+        navigator.popView();
+        swv.viewPort = null;
+        swv.dispose();
+        swv = null;
+      }
+      
+      protected function onResize(event:ResizeEvent):void
+      {
+        if(swv)
+          resizeSWV();
+      }
+      
+      private function resizeSWV() : void
+      {
+        swv.viewPort = new Rectangle(0,delta,stage.stageWidth,stage.stageHeight - delta);
+      }
+      
+    ]]>
+  </fx:Script>
+  
+  <s:Rect width="100%"
+          height="{delta}">
+    <s:fill>
+      <s:SolidColor color="0x1a1d20"/>
+    </s:fill>
+  </s:Rect>
+  
+  <s:HGroup id="topGroup"
+            width="100"
+            height="{delta}"
+            verticalAlign="middle"
+            click="menuHandler(event)">
+    
+      <s:BitmapImage>
+        <s:source>
+          <s:MultiDPIBitmapSource source160dpi="@Embed('assets/back/160/ic_action_previous_item.png')"
+                                  source240dpi="@Embed('assets/back/240/ic_action_previous_item.png')"
+                                  source320dpi="@Embed('assets/back/320/ic_action_previous_item.png')"/>
+        </s:source>
+      </s:BitmapImage>
+    
+  </s:HGroup>
+  
+  <s:HGroup width="100%"
+            height="100%"
+            horizontalAlign="center"
+            verticalAlign="middle">
+    <s:BusyIndicator width="32"
+                     height="32"/>
+  </s:HGroup>
+  
+</s:View>

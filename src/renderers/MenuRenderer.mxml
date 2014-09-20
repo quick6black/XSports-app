@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+                xmlns:s="library://ns.adobe.com/flex/spark"
+                height="60"
+                width="100%">
+  
+  <fx:Declarations>
+    <s:MultiDPIBitmapSource id="all"
+                            source160dpi="@Embed('assets/all/160/all.png')"
+                            source240dpi="@Embed('assets/all/240/all.png')"
+                            source320dpi="@Embed('assets/all/320/all.png')"/>
+    <s:MultiDPIBitmapSource id="snow"
+                            source160dpi="@Embed('assets/snow/160/snow.png')"
+                            source240dpi="@Embed('assets/snow/240/snow.png')"
+                            source320dpi="@Embed('assets/snow/320/snow.png')"/>
+    <s:MultiDPIBitmapSource id="water"
+                            source160dpi="@Embed('assets/water/160/water.png')"
+                            source240dpi="@Embed('assets/water/240/water.png')"
+                            source320dpi="@Embed('assets/water/320/water.png')"/>
+    <s:MultiDPIBitmapSource id="air"
+                            source160dpi="@Embed('assets/air/160/air.png')"
+                            source240dpi="@Embed('assets/air/240/air.png')"
+                            source320dpi="@Embed('assets/air/320/air.png')"/>
+    <s:MultiDPIBitmapSource id="ground"
+                            source160dpi="@Embed('assets/ground/160/ground.png')"
+                            source240dpi="@Embed('assets/ground/240/ground.png')"
+                            source320dpi="@Embed('assets/ground/320/ground.png')"/>
+  </fx:Declarations>
+  
+  <s:HGroup width="100%"
+            height="100%"
+            paddingLeft="6"
+            verticalAlign="middle">
+    
+    <s:BitmapImage id="picto"/>
+    
+    <s:Label id="title"
+             fontSize="20"/>
+    
+  </s:HGroup>
+  
+  <s:Line width="100%" height="2" bottom="0" alpha="0.5">
+    <s:stroke>
+      <s:SolidColorStroke color="0x5b6b75"/>
+    </s:stroke>
+  </s:Line>
+  
+  <fx:Script>
+    <![CDATA[
+      
+      public override function set data(value:Object):void
+      {
+        super.data = value;
+        switch((data as String).toLowerCase())
+        {
+          case "all":
+            picto.source = all;
+            break;
+          
+          case "snow":
+            picto.source = snow;
+            break;
+          
+          case "water":
+            picto.source = water;
+            break;
+          
+          case "air":
+            picto.source = air;
+            break;
+          
+          case "ground":
+            picto.source = ground;
+            break;
+        }
+        title.text = data as String;
+      }
+      
+    ]]>
+  </fx:Script>   
+  
+</s:ItemRenderer>

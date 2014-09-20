@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+               xmlns:s="library://ns.adobe.com/flex/spark" 
+               creationComplete="init(event)"
+               applicationDPI="160"
+               splashScreenImage="DynamicSplashScreen"
+               splashScreenScaleMode="zoom">
+  
+  <fx:Style source="style.css"/>
+	
+	<fx:Script>
+		<![CDATA[
+      
+      import mx.events.FlexEvent;
+      
+      import manager.ApplicationManager;
+			
+			protected function init(event:FlexEvent):void
+			{
+        NativeApplication.nativeApplication.addEventListener(Event.DEACTIVATE, onDeactivateApp);
+				ApplicationManager.instance.init();
+			}
+      
+      protected function onDeactivateApp(event:Event):void
+      {
+        NativeApplication.nativeApplication.exit();
+      }
+			
+		]]>
+	</fx:Script>
+	
+</s:Application>

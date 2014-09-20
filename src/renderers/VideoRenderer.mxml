@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+                xmlns:s="library://ns.adobe.com/flex/spark"
+                autoDrawBackground="false"
+                height.date="50"
+                height.video="80"
+                width="100%">
+  
+  <s:states>
+    <s:State name="video"/>
+    <s:State name="date"/>
+  </s:states>
+  
+  <s:Rect left.video="6"
+          right.video="6"
+          width.date="100%"
+          height="100%">
+    <s:fill>
+      <s:SolidColor color.date="0x292e33" color.video="0x394149"/>
+    </s:fill>
+  </s:Rect>
+  
+  <s:VGroup height="100%"
+            verticalAlign="middle"
+            paddingLeft="12"
+            includeIn="date">
+    
+    <s:Label fontSize="18"
+             fontWeight="bold"
+             text="{dateLabel}"/>
+    
+  </s:VGroup>
+  
+  <s:BitmapImage id="img"
+                 top="4"
+                 left="8"
+                 height="72"
+                 width="110"
+                 includeIn="video"/>
+  
+  <s:VGroup left="124"
+            height="100%"
+            width="100%"
+            gap="2"
+            paddingTop="12"
+            paddingBottom="6"
+            paddingRight="8"
+            clipAndEnableScrolling="true"
+            includeIn="video">
+    
+    <s:Label fontSize="12"
+             color="0xffea00"
+             text="{category}"
+             fontStyle="italic"/>
+    
+    <s:Label fontSize="14"
+             fontWeight="bold"
+             text="{title}"
+             maxDisplayedLines="2"
+             width="100%"/>
+    
+    <s:Label text="{duration}"
+             fontSize="12"/>
+    
+  </s:VGroup>
+  
+  <s:Line height="100%" right="8" includeIn="video">
+    <s:stroke>
+      <s:SolidColorStroke color="{typeColor}" weight="4"/>
+    </s:stroke>
+  </s:Line>
+  
+  <s:Line left="6" right="6" bottom="0" alpha="0.5">
+    <s:stroke>
+      <s:SolidColorStroke color="0x5b6b75"/>
+    </s:stroke>
+  </s:Line>
+  
+  <fx:Script>
+    <![CDATA[
+      
+      import objects.YoutubeVideo;
+      
+      private var loader : Loader;
+      private var video : YoutubeVideo;
+      private var date : Date;
+      
+      [Bindable]private var title : String;
+      [Bindable]private var duration : String;
+      [Bindable]private var category : String;
+      [Bindable]private var typeColor:uint;
+      [Bindable]private var dateLabel : String;
+      
+      private var months:Array = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      public override function set data(value:Object):void
+      {
+        super.data = value;
+        
+        if(value is Date)
+        {
+          date = value as Date;
+          currentState = "date";
+          dateLabel = formatDate(date);
+        }
+        else
+        {
+          video = value as YoutubeVideo;
+          currentState = "video";
+          loader = new Loader;
+          loadImage();
+          title = video.title;
+          duration = formatDuration(video.duration);
+          category = video.category;
+          switch(video.type)
+          {
+            case "snow":
+              typeColor = 0xbbe6ff;
+              break;
+            
+            case "ground":
+              typeColor = 0xc06c00;
+              break;
+            
+            case "air":
+              typeColor = 0x719eb8;
+              break;
+            
+            case "water":
+              typeColor = 0x0ed0ae;
+              break;
+            
+            default:
+              typeColor = 0xffea00;
+              break;
+          }
+        }
+      }
+      
+      private function formatDuration(value : int) : String
+      {
+        var result : String;
+        if(value > 60)
+        {
+          var mn : int = value / 60;
+          var sec : int = value - (60 * mn);
+          result = mn + ":" + (sec > 9 ? sec : "0" + sec);
+        }
+        else
+          result = "00:" + value;
+        
+        return result;
+      }
+      
+      private function formatDate(value : Date) : String
+      {
+        var today : Date = new Date;
+        var today_date : Date = new Date(today.fullYear,today.month,today.date);
+        if(today_date.time == value.time)
+          return "Today's Shot";
+        
+        today_date.date -=1;
+        if(today_date.time == value.time)
+          return "Yesterday's Shot";
+        
+        return months[value.month] + " " + value.date + " Shot";
+      }
+      
+      private function loadImage() : void
+      {
+        loader.contentLoaderInfo.addEventListener(Event.COMPLETE,onImageComplete);
+        loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,onError);
+        loader.load(new URLRequest("http://img.youtube.com/vi/"+ video.video_id + "/1.jpg"));
+      }
+      
+      private function onImageComplete(event:Event):void
+      {
+        loader.contentLoaderInfo.removeEventListener(Event.COMPLETE,onImageComplete);
+        loader.contentLoaderInfo.removeEventListener(IOErrorEvent.IO_ERROR,onError);
+        img.source = loader.content;
+      }
+      
+      private function onError(event:Event) : void
+      {
+        loader.contentLoaderInfo.removeEventListener(Event.COMPLETE,onImageComplete);
+        loader.contentLoaderInfo.removeEventListener(IOErrorEvent.IO_ERROR,onError);
+      }
+      
+    ]]>
+  </fx:Script>
+  
+</s:ItemRenderer>

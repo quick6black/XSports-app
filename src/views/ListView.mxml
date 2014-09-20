@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:View xmlns:fx="http://ns.adobe.com/mxml/2009" 
+        xmlns:s="library://ns.adobe.com/flex/spark"
+        initialize="onInitialize(event)"
+        viewActivate="onViewActivate(event)"
+        actionBarVisible="false">
+  
+  <fx:Script>
+    <![CDATA[		
+      import mx.collections.ArrayCollection;
+      import mx.events.EffectEvent;
+      import mx.events.TouchInteractionEvent;
+      
+      import spark.components.Scroller;
+      import spark.events.IndexChangeEvent;
+      
+      import manager.SQLConnectionManager;
+      
+      import objects.YoutubeVideo;
+      
+      [Bindable] private var isOpen:Boolean;	
+      [Bindable] private var currentStageWidth:Number;
+      [Bindable] private var currentStageHeight:Number;
+      [Bindable] private var catgArray:ArrayCollection = new ArrayCollection(["All","Snow","Water","Air","Ground"]);
+      [Bindable] private var videos:ArrayCollection;
+      [Bindable] private var previousVScrollValue:Number = 0;
+      
+      private var filter:String;
+      private var enterFrameFlag:Boolean = false;
+      
+      private static const SCROLL_POSITION_TRIGGER_REFRESH:int = -80;
+      
+      private function onInitialize(e : Event) :void
+      {
+        currentStageWidth = stage.stageWidth*-1;
+        currentStageHeight = navigator.height-40;
+        lateralMenu.height = currentStageHeight;			
+        lateralMenu.x = currentStageWidth;
+        isOpen = false;
+        
+        stage.addEventListener(Event.RESIZE, orientationHandler);
+      }
+      
+      protected function onViewActivate(event:Event):void
+      {
+        var scroller:Scroller = list.scroller;
+        scroller.addEventListener(TouchInteractionEvent.TOUCH_INTERACTION_START, onChangeStart);
+        if(SQLConnectionManager.instance.videos)
+        {
+          videos = SQLConnectionManager.instance.videos;
+          videos.filterFunction = filterFunction;  
+        }
+      }
+      
+      protected function onChangeStart(event:TouchInteractionEvent):void
+      {
+        if (enterFrameFlag)
+          return;
+        
+        list.addEventListener(MouseEvent.MOUSE_UP, onMouseStop);
+        list.addEventListener(MouseEvent.ROLL_OUT, onMouseStop);
+        list.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+        enterFrameFlag = true;
+      }
+      
+      protected function onEnterFrame(event:Event):void
+      { 
+        var vScroll:Number = list.scroller.verticalScrollBar.value;
+        if (previousVScrollValue == vScroll)
+          return;
+        
+        previousVScrollValue = vScroll;
+        if(vScroll < -20)
+        {
+          currentState = "pulledUp";
+        }
+        else if(vScroll > list.measuredHeight - 2 * list.height && !SQLConnectionManager.instance.end_data && videos)
+        {
+          var date : Date = SQLConnectionManager.sqlToFlash(SQLConnectionManager.instance.old_date);
+          date.date--;
+          var second_date : String = SQLConnectionManager.dateToString(date);
+          date.date -= 7;
+          var first_date : String = SQLConnectionManager.dateToString(date);
+          SQLConnectionManager.instance.loadDataFromLocalDatabase(first_date,second_date);
+        }
+        else
+        {
+          currentState = "normal";
+        }
+      }
+      
+      protected function onMouseStop(event:MouseEvent):void
+      {
+        var vScroll:Number = list.scroller.verticalScrollBar.value;
+        previousVScrollValue = 0;
+        if (currentState == "pulledUp" && vScroll < SCROLL_POSITION_TRIGGER_REFRESH)
+        {
+          currentState = "loadingUp";
+          loadGroupUp.includeInLayout = true;
+          SQLConnectionManager.instance.addEventListener(Event.COMPLETE,onRefresh);
+          SQLConnectionManager.instance.refresh(true);
+        }
+        else 
+        {
+          currentState = "normal";
+        }
+        if (enterFrameFlag)
+        {
+          list.removeEventListener(MouseEvent.MOUSE_UP, onMouseStop);
+          list.removeEventListener(MouseEvent.ROLL_OUT, onMouseStop);
+          list.removeEventListener(Event.ENTER_FRAME, onEnterFrame);
+          enterFrameFlag = false;
+        }
+      }
+      
+      protected function onRefresh(e : Event) : void
+      {
+        SQLConnectionManager.instance.removeEventListener(Event.COMPLETE,onRefresh);
+        currentState = currentState == "loadingUp" ? "normal" : currentState;
+        if(!videos)
+          videos = SQLConnectionManager.instance.videos;
+      }
+      
+      protected function filterFunction(item : Object) : Boolean
+      {
+        if(!filter)
+          return true;
+        
+        return (item.type == filter || item.type == "mix");
+      }
+      
+      protected function list1_clickHandler(event:MouseEvent):void
+      {
+        if(list.selectedItem is YoutubeVideo)
+        {
+          navigator.pushView(VideoView,list.selectedItem);
+        }
+      }
+      
+      private function orientationHandler(event:Event):void
+      {
+        if(isActive)
+        {
+          currentStageWidth = stage.stageWidth*-1;
+          
+          if(isOpen == false){
+            lateralMenu.x = currentStageWidth;
+          }
+          
+          currentStageHeight = navigator.height-45;
+          lateralMenu.height = currentStageHeight;	
+        }
+      }
+      
+      protected function menuHandler(event:MouseEvent):void
+      {
+        if(isOpen == true){
+          moveOut.play();
+          isOpen = false;
+        } else if(isOpen == false){
+          moveIn.play();
+          isOpen = true;
+        }
+      }
+      
+      protected function changeHandler(event:IndexChangeEvent):void
+      {		
+        isOpen = false;
+        moveOut.play();
+        switch(event.newIndex)
+        {
+          case 0:
+            filter = null;
+            break;
+          
+          case 1:
+            filter ="snow";
+            break;
+          
+          case 2:
+            filter = "water";
+            break;
+          
+          case 3:
+            filter = "air";
+            break;
+          
+          case 4:
+            filter = "ground";
+            break;
+        }
+        videos.refresh();
+      }
+      
+      protected function onEffectStart(event:EffectEvent):void
+      {
+        lateralMenu.visible = true;
+      }
+      
+      protected function onEffectEnd(event:EffectEvent):void
+      {
+        lateralMenu.visible = false;        
+      }
+      
+    ]]>
+  </fx:Script>
+  
+  <fx:Declarations>
+    <s:Move id="moveIn" duration="200" target="{lateralMenu}" xTo="0" effectStart="onEffectStart(event)"/>
+    <s:Move id="moveOut" duration="200" target="{lateralMenu}" xTo="{currentStageWidth}" effectEnd="onEffectEnd(event)"/>
+  </fx:Declarations>
+  
+  <s:states>
+    <s:State name="normal" />
+    <s:State name="loadingUp" />
+    <s:State name="pulledUp" />
+  </s:states>
+  
+  <s:transitions>
+    <s:Transition fromState="loadingUp" toState="normal">
+      <s:Parallel effectEnd="loadGroupUp.includeInLayout = false;" duration="500">
+        <s:Fade target="{loadGroupUp}" alphaFrom="1" alphaTo="0"/>
+        <s:Resize target="{loadGroupUp}" heightTo="0">
+          <s:easer>
+            <s:Sine />
+          </s:easer>
+        </s:Resize>
+      </s:Parallel>
+    </s:Transition>
+  </s:transitions>
+  
+  <s:Rect width="100%"
+          height="50">
+    <s:fill>
+      <s:SolidColor color="0x1a1d20"/>
+    </s:fill>
+  </s:Rect>
+  
+  <s:Group id="topGroup"
+            height="50"
+            click="menuHandler(event)">
+    
+    <s:HGroup id="menu"
+              height="100%"
+              verticalAlign="middle"
+              left="{isOpen ? -8 : 0}">
+      <s:BitmapImage alpha="0.75">
+        <s:source>
+          <s:MultiDPIBitmapSource source160dpi="@Embed('assets/menu/160/ic_drawer.png')"
+                                  source240dpi="@Embed('assets/menu/240/ic_drawer.png')"
+                                  source320dpi="@Embed('assets/menu/320/ic_drawer.png')"/>
+        </s:source>
+      </s:BitmapImage>
+    </s:HGroup>
+    
+    <s:Label fontSize="28"
+             fontFamily="underground"
+             text="X SPORTS"
+             color="0xffea00"
+             height="100%"
+             top="15"
+             left="{menu.width + 4}"/>
+    
+  </s:Group>
+  
+  <s:VGroup width="100%" top="50" bottom="0" gap="0">
+    <s:HGroup id="loadGroupUp" width="100%" height="40"
+              visible.loadingUp="true" visible="false"
+              includeInLayout="false"
+              verticalAlign="middle" horizontalAlign="center">
+      <s:BusyIndicator width="30" height="30"/>
+    </s:HGroup>
+    
+    <s:List id="list" width="100%" height="100%" dataProvider="{videos}" click="list1_clickHandler(event)" itemRenderer="renderers.VideoRenderer" />
+    
+  </s:VGroup>
+  
+  <s:HGroup width="100%" top="50" horizontalAlign="center" visible="{previousVScrollValue >= 0 ? false : true}">
+    <s:Line width="{previousVScrollValue * width / SCROLL_POSITION_TRIGGER_REFRESH}">
+      <s:stroke>
+        <s:SolidColorStroke color="0xffea00" weight="2"/>
+      </s:stroke>
+    </s:Line>
+  </s:HGroup>
+  
+  <s:Group id="lateralMenu" width="100%" top="50" bottom="0" visible="false">    
+    <s:List id="componentsList" 
+            itemRenderer="renderers.MenuRenderer" dataProvider="{catgArray}" width="200" height="100%" change="changeHandler(event)"
+            selectionColor="0x1a1d20" downColor="0x1a1d20" contentBackgroundColor="0x1a1d20" alternatingItemColors="[0x1a1d20]"/>
+  </s:Group>
+  
+</s:View>

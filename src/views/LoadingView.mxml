@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:View xmlns:fx="http://ns.adobe.com/mxml/2009" 
+        xmlns:s="library://ns.adobe.com/flex/spark"
+        initialize="view1_initializeHandler(event)"
+        actionBarVisible="false">
+  
+  <fx:Script>
+    <![CDATA[
+      import mx.events.FlexEvent;
+      
+      import manager.SQLConnectionManager;
+      
+      protected function view1_initializeHandler(event:FlexEvent):void
+      {
+        SQLConnectionManager.instance.addEventListener(Event.COMPLETE,onSQLComplete);
+        SQLConnectionManager.instance.init();
+      }
+      
+      protected function onSQLComplete(e : Event) : void
+      {
+        SQLConnectionManager.instance.removeEventListener(Event.COMPLETE,onSQLComplete);
+        navigator.pushView(ListView);
+      }
+      
+    ]]>
+  </fx:Script>
+  
+  <s:VGroup width="100%"
+            height="100%"
+            horizontalAlign="center"
+            verticalAlign="middle">
+    <s:BusyIndicator id="busy"/>
+  </s:VGroup>
+  
+</s:View>
